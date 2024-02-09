@@ -6,8 +6,9 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 import requests
 import json
 
-# Вставьте токен вашего бота здесь
-TELEGRAM_TOKEN = '6802893919:AAHu7eQN_IHadnX9vJU1wudHTTloaMSYHyY'
+import os
+
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 # URL внешнего API для обработки сообщений
 EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/216fc9ec-2253-4769-a382-fd1171ba596c'
