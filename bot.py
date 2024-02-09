@@ -1,6 +1,3 @@
-import nest_asyncio
-nest_asyncio.apply()
-
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 import httpx
@@ -21,7 +18,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     text = update.message.text
     # Отправляем действие "печатает"
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action='typing')
-    
     # Асинхронная отправка запроса к внешнему API
     async with httpx.AsyncClient() as client:
         response = await client.post(EXTERNAL_API_URL, headers={'Content-Type': 'application/json'}, json={'question': text})
@@ -40,4 +36,4 @@ def main():
     application.run_polling()
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
