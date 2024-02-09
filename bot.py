@@ -18,8 +18,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     text = update.message.text
     # Отправляем действие "печатает"
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action='typing')
-    # Асинхронная отправка запроса к внешнему API
-    async with httpx.AsyncClient() as client:
+    # Асинхронная отправка запроса к внешнему API с увеличенным временем ожидания
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=60.0)) as client:
         response = await client.post(EXTERNAL_API_URL, headers={'Content-Type': 'application/json'}, json={'question': text})
         if response.status_code == 200:
             data = response.json()
