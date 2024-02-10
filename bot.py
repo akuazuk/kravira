@@ -1,39 +1,24 @@
 import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
-import httpx
-import asyncio
+from aiogram import Bot, Dispatcher, executor, types
 
-# Логирование для отладки
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+API_TOKEN = '6802893919:AAHu7eQN_IHadnX9vJU1wudHTTloaMSYHyY'
 
-# Вставьте ваш токен Telegram бота здесь
-TELEGRAM_TOKEN = '6802893919:AAHu7eQN_IHadnX9vJU1wudHTTloaMSYHyY'
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
 
-# URL внешнего API
-EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/216fc9ec-2253-4769-a382-fd1171ba596c'
+# Инициализация бота и диспетчера
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Привет! Отправь мне что-нибудь, и я передам это во внешний API.")
+# Обработчик команды /start
+@dp.message_handler(commands=['start'])
+async def send_welcome(message: types.Message):
+    await message.reply("Привет! Я эхо-бот, отправь мне что-нибудь.")
 
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    question = update.message.text
-    async with httpx.AsyncClient() as client:
-        response = await client.post(EXTERNAL_API_URL, json={'question': question})
-        if response.status_code == 200:
-            answer = response.json().get('answer', 'Извините, не могу обработать ваш запрос.')
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Ответ от API: {answer}")
-        else:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="Произошла ошибка при обработке вашего запроса.")
-
-def main() -> None:
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
-
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
-
-    application.run_polling()
+# Эхо-обработчик для всех текстовых сообщений
+@dp.message_handler(content_types=['text'])
+async def echo_message(msg: types.Message):
+    await bot.send_message(msg.from_user.id, msg.text)
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    executor.start_polling(dp, skip_updates=True)
