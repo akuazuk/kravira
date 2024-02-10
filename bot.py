@@ -16,12 +16,13 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler()
 async def send_question_to_external_api(message: types.Message):
-    chat_id = message.chat.id  # Уникальный идентификатор чата используется как sessionId
+    chat_id = message.chat.id  # Используем chat_id как уникальный идентификатор для sessionId
     question_text = message.text
     payload = {
         "question": question_text,
-        "sessionId": str(chat_id),  # Преобразование chat_id в строку, если API ожидает строковый идентификатор
-        # Дополнительные параметры, если они требуются вашим API, можно включить здесь
+        "overrideConfig": {
+            "sessionId": str(chat_id)  # Преобразование chat_id в строку для использования как sessionId
+        }
     }
     headers = {'Content-Type': 'application/json'}
     
@@ -32,11 +33,10 @@ async def send_question_to_external_api(message: types.Message):
                 json=payload,
                 headers=headers
             )
-            response.raise_for_status()  # Проверка на наличие HTTP ошибок
+            response.raise_for_status()
             data = response.json()
             
-            # Извлечение и отправка ответа пользователя
-            answer_text = data.get('text', 'Извините, не могу обработать ваш запрос.')
+            answer_text = data.get('text', 'Извините, не получилось обработать ваш запрос.')
             await message.answer(answer_text)
             
         except httpx.HTTPStatusError as e:
@@ -50,7 +50,6 @@ async def send_question_to_external_api(message: types.Message):
         except Exception as e:
             logging.error(f"Неизвестная ошибка: {str(e)}")
             await message.answer('Произошла неизвестная ошибка.')
-
 
 async def on_startup(dp: Dispatcher):
     await bot.delete_webhook()
