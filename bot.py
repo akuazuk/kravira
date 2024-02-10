@@ -16,6 +16,9 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler()
 async def send_question_to_external_api(message: types.Message):
+    # Отправляем статус "печатает" перед началом обработки запроса
+    await bot.send_chat_action(message.chat.id, action=types.ChatActions.TYPING)
+    
     question_text = message.text
     payload = {
         "question": question_text  # Удалите лишние пробелы и скобки из вашего примера
@@ -24,6 +27,9 @@ async def send_question_to_external_api(message: types.Message):
     
     async with httpx.AsyncClient() as client:
         try:
+            # Имитация задержки для наглядности статуса "печатает"
+            await asyncio.sleep(1)  # Ожидаем 1 секунду перед отправкой запроса
+            
             response = await client.post(
                 EXTERNAL_API_URL,
                 json=payload,
