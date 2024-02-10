@@ -38,6 +38,10 @@ async def send_question_to_external_api(message: types.Message):
             logging.error(f"Ошибка запроса к API: {e}")
             await message.answer('Произошла ошибка при отправке запроса к API.')
 
+async def on_startup(dp: Dispatcher):
+    await bot.delete_webhook()
+    # Здесь могут быть другие действия при запуске бота
+
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
 
