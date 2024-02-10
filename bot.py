@@ -4,7 +4,7 @@ import httpx
 import asyncio
 
 API_TOKEN = '6802893919:AAHu7eQN_IHadnX9vJU1wudHTTloaMSYHyY'
-EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/216fc9ec-2253-4769-a382-fd1171ba596c'
+EXTERNAL_API_URL = 'http://localhost:3000/api/v1/prediction/<chatflowid>'
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
@@ -17,19 +17,38 @@ async def send_welcome(message: types.Message):
 @dp.message_handler()
 async def send_question_to_external_api(message: types.Message):
     question_text = message.text
+    payload = {
+        "question": question_text,
+        "overrideConfig": {
+            "returnSourceDocuments": True
+        },
+        "history": [
+            {
+                "message": "Hello, how can I assist you?",
+                "type": "apiMessage"
+            },
+            {
+                "type": "userMessage",
+                "message": "Hello I am Bob"
+            },
+            {
+                "type": "apiMessage",
+                "message": "Hello Bob! how can I assist you?"
+            }
+        ]
+    }
     headers = {'Content-Type': 'application/json'}
     
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
                 EXTERNAL_API_URL,
-                json={"question": question_text},
+                json=payload,
                 headers=headers
             )
             response.raise_for_status()
             data = response.json()
             
-            # Проверьте структуру ответа от API и адаптируйте следующую строку соответственно
             answer = data.get('answer', 'Извините, не получилось обработать ваш запрос.')
             await message.answer(answer)
             
