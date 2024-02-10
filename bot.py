@@ -5,7 +5,7 @@ import asyncio
 import uuid
 
 API_TOKEN = '6802893919:AAHu7eQN_IHadnX9vJU1wudHTTloaMSYHyY'
-EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/{your-chatflowid}' # Замените {your-chatflowid} на ваш реальный chatflowid
+EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/{}' # Замените {your-chatflowid} на ваш реальный chatflowid
 
 # Словарь для хранения sessionId по chat_id
 session_storage = {}
@@ -40,7 +40,7 @@ async def send_question_to_external_api(message: types.Message):
     await bot.send_chat_action(chat_id, action=types.ChatActions.TYPING)
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(EXTERNAL_API_URL.format(your-chatflowid='216fc9ec-2253-4769-a382-fd1171ba596c'), json=payload, headers=headers) # Замените 'your_actual_chatflowid' на ваш реальный chatflowid
+            response = await client.post(EXTERNAL_API_URL.format('216fc9ec-2253-4769-a382-fd1171ba596c'), json=payload, headers=headers) # Замените 'your_actual_chatflowid' на ваш реальный chatflowid
             response.raise_for_status()
             data = response.json()
 
