@@ -15,28 +15,17 @@ dp = Dispatcher(bot)
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     await message.answer("Привет! Отправь мне вопрос, и я перешлю его во внешний API.")
-    session_storage.pop(message.chat.id, None)
-
-@dp.message_handler(commands=['end'])
-async def end_conversation(message: types.Message):
-    chat_id = message.chat.id
-    if chat_id in session_storage:
-        del session_storage[chat_id]
-        await message.answer("Разговор завершен. Все данные сессии очищены.")
-    else:
-        await message.answer("Разговор не был начат или уже завершен.")
 
 @dp.message_handler()
 async def send_question_to_external_api(message: types.Message):
     chat_id = message.chat.id
     question_text = message.text
+    # Получаем sessionId для текущего chat_id или None, если его нет
     session_id = session_storage.get(chat_id)
     
     payload = {
         "question": question_text,
-        "overrideConfig": {
-            "sessionId": session_id if session_id else str(chat_id)
-        }
+        "sessionId": session_id  # Отправляем текущий sessionId или None
     }
     headers = {'Content-Type': 'application/json'}
     
@@ -46,7 +35,12 @@ async def send_question_to_external_api(message: types.Message):
             response = await client.post(EXTERNAL_API_URL, json=payload, headers=headers)
             response.raise_for_status()
             data = response.json()
-            session_storage[chat_id] = data.get("sessionId")
+            
+            # Проверяем, совпадает ли полученный sessionId с тем, что хранится в памяти
+            if session_id != data.get("sessionId"):
+                # Обновляем sessionId в памяти, если получен новый от API
+                session_storage[chat_id] = data.get("sessionId")
+            
             answer_text = data.get('text', 'Извините, не могу обработать ваш запрос.')
             await message.answer(answer_text)
         except httpx.HTTPStatusError as e:
