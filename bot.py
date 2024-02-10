@@ -5,7 +5,7 @@ import asyncio
 import uuid
 
 API_TOKEN = '6802893919:AAHu7eQN_IHadnX9vJU1wudHTTloaMSYHyY'
-EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/216fc9ec-2253-4769-a382-fd1171ba596c' # Замените {your-chatflowid} на ваш реальный chatflowid
+EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/216fc9ec-2253-4769-a382-fd1171ba596c'
 
 # Словарь для хранения sessionId по chat_id
 session_storage = {}
@@ -16,7 +16,7 @@ dp = Dispatcher(bot)
 
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
-    await message.answer("Привет! Отправь мне вопрос, и я перешлю его во внешний API.")
+    await message.answer("Привет! Задай мне вопрос.")
     # Генерируем и сохраняем случайный sessionId для нового пользователя, если он ещё не существует
     if message.chat.id not in session_storage:
         session_storage[message.chat.id] = str(uuid.uuid4())
