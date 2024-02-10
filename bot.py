@@ -18,25 +18,7 @@ async def send_welcome(message: types.Message):
 async def send_question_to_external_api(message: types.Message):
     question_text = message.text
     payload = {
-        "question": question_text,
-        # Убедитесь, что ваш API поддерживает следующие параметры в запросе.
-        "overrideConfig": {
-            "returnSourceDocuments": True
-        },
-        "history": [
-            {
-                "message": "Hello, how can I assist you?",
-                "type": "apiMessage"
-            },
-            {
-                "type": "userMessage",
-                "message": "Hello I am Bob"
-            },
-            {
-                "type": "apiMessage",
-                "message": "Hello Bob! how can I assist you?"
-            }
-        ]
+        "question": question_text  # Удалите лишние пробелы и скобки из вашего примера
     }
     headers = {'Content-Type': 'application/json'}
     
@@ -47,17 +29,21 @@ async def send_question_to_external_api(message: types.Message):
                 json=payload,
                 headers=headers
             )
-            if response.status_code == 200:
-                data = response.json()
-                # Проверьте структуру ответа и адаптируйте ключ для получения ответа
-                answer = data.get('answer', 'Извините, не получилось обработать ваш запрос.')
-                await message.answer(answer)
-            else:
-                logging.error(f"Ошибка ответа от API: {response.status_code} - {response.text}")
-                await message.answer('Произошла ошибка при обработке вашего запроса API.')
+            response.raise_for_status()
+            data = response.json()
+            
+            # Извлечение текста ответа из ответа API
+            answer_text = data.get('text', 'Извините, не могу обработать ваш запрос.')
+            await message.answer(answer_text)
+            
+        except httpx.HTTPStatusError as e:
+            logging.error(f"Ошибка ответа от API: {e.response.status_code} - {e.response.text}")
+            await message.answer('Произошла ошибка при обработке вашего запроса API.')
+            
         except httpx.RequestError as e:
             logging.error(f"Ошибка запроса к API: {str(e)}")
             await message.answer('Произошла ошибка при отправке запроса к API.')
+            
         except Exception as e:
             logging.error(f"Неизвестная ошибка: {str(e)}")
             await message.answer('Произошла неизвестная ошибка.')
