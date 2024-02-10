@@ -2,6 +2,7 @@ import logging
 from aiogram import Bot, Dispatcher, executor, types
 import httpx
 import asyncio
+import uuid
 
 API_TOKEN = '6802893919:AAHu7eQN_IHadnX9vJU1wudHTTloaMSYHyY'
 EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/216fc9ec-2253-4769-a382-fd1171ba596c'
@@ -16,18 +17,21 @@ dp = Dispatcher(bot)
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     await message.answer("Привет! Отправь мне вопрос, и я перешлю его во внешний API.")
+    # Генерируем и сохраняем случайный sessionId для нового пользователя
+    if message.chat.id not in session_storage:
+        session_storage[message.chat.id] = str(uuid.uuid4())
 
 @dp.message_handler()
 async def send_question_to_external_api(message: types.Message):
     chat_id = message.chat.id
     question_text = message.text
 
-    # Извлечение текущего sessionId для данного пользователя, если он существует
+    # Извлекаем сохранённый sessionId для данного пользователя
     session_id = session_storage.get(chat_id)
 
     payload = {
         "question": question_text,
-        **({"sessionId": session_id} if session_id else {})
+        "sessionId": session_id
     }
     headers = {'Content-Type': 'application/json'}
 
@@ -38,8 +42,7 @@ async def send_question_to_external_api(message: types.Message):
             response.raise_for_status()
             data = response.json()
 
-            # Сохранение или обновление sessionId на основе ответа от API
-            session_storage[chat_id] = data.get("sessionId")
+            # Нет необходимости обновлять sessionId, так как мы используем один и тот же для каждого пользователя
 
             answer_text = data.get('text', 'Извините, не могу обработать ваш запрос.')
             await message.answer(answer_text)
