@@ -6,10 +6,8 @@ import asyncio
 API_TOKEN = '6802893919:AAHu7eQN_IHadnX9vJU1wudHTTloaMSYHyY'
 EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/216fc9ec-2253-4769-a382-fd1171ba596c'
 
-# Словарь для хранения sessionId по chat_id
-session_storage = {}
-# Словарь для обратного соответствия sessionId к chat_id
-session_to_user = {}
+# Словарь для хранения sessionId и последнего chatId по sessionId
+session_info = {}
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
@@ -23,8 +21,13 @@ async def send_welcome(message: types.Message):
 async def send_question_to_external_api(message: types.Message):
     chat_id = message.chat.id
     question_text = message.text
-    # Получаем текущий sessionId для данного пользователя, если он существует
-    session_id = session_storage.get(chat_id)
+
+    # Извлечение текущего sessionId ассоциированного с chat_id пользователя, если он существует
+    session_id = None
+    for sid, info in session_info.items():
+        if info.get('chatId') == str(chat_id):
+            session_id = sid
+            break
 
     payload = {
         "question": question_text,
@@ -39,11 +42,10 @@ async def send_question_to_external_api(message: types.Message):
             response.raise_for_status()
             data = response.json()
 
+            # Обновление или установка sessionId и chatId на основе ответа от API
             new_session_id = data.get("sessionId")
-            if new_session_id and (new_session_id not in session_to_user or session_to_user[new_session_id] == chat_id):
-                # Обновляем sessionId только если он новый и не ассоциирован с другим пользователем
-                session_storage[chat_id] = new_session_id
-                session_to_user[new_session_id] = chat_id
+            if new_session_id:
+                session_info[new_session_id] = {"chatId": str(chat_id)}
 
             answer_text = data.get('text', 'Извините, не могу обработать ваш запрос.')
             await message.answer(answer_text)
