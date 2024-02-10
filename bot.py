@@ -45,7 +45,7 @@ async def send_question_to_external_api(update: Update, context: CallbackContext
             logging.error(f"Ошибка ответа от API: {response.status_code} - {response.text}")
             context.bot.send_message(chat_id=chat_id, text='Произошла ошибка при обработке вашего запроса API.')
 
-def main():
+async def main():
     bot = Bot(token=API_TOKEN)
     updater = Updater(token=API_TOKEN, use_context=True)
     dp = updater.dispatcher
@@ -53,8 +53,9 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, send_question_to_external_api))
 
-    updater.start_polling()
-    updater.idle()
+    await updater.start_polling()
+    await updater.idle()
+
 
 if __name__ == '__main__':
     main()
