@@ -6,7 +6,7 @@ import asyncio
 API_TOKEN = '6802893919:AAHu7eQN_IHadnX9vJU1wudHTTloaMSYHyY'
 EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/216fc9ec-2253-4769-a382-fd1171ba596c'
 
-# Словарь для хранения sessionId по chat_id
+# Словарь для хранения sessionId и chat_id
 session_storage = {}
 
 logging.basicConfig(level=logging.INFO)
@@ -16,22 +16,17 @@ dp = Dispatcher(bot)
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     await message.answer("Привет! Отправь мне вопрос, и я перешлю его во внешний API.")
-    # При начале новой сессии чата удаляем предыдущий sessionId для данного chat_id (если он есть)
-    if message.chat.id in session_storage:
-        del session_storage[message.chat.id]
 
 @dp.message_handler()
 async def send_question_to_external_api(message: types.Message):
     chat_id = message.chat.id
     question_text = message.text
-    
-    # Получаем текущий sessionId для данного chat_id, если он существует
-    session_id = session_storage.get(chat_id)
+
+    # Извлечение текущего sessionId для данного пользователя, если он существует
+    session_id = session_storage.get(chat_id, {}).get('sessionId')
 
     payload = {
         "question": question_text,
-        # Если sessionId отсутствует, отправляем запрос без него
-        # В противном случае используем существующий sessionId
         **({"sessionId": session_id} if session_id else {})
     }
     headers = {'Content-Type': 'application/json'}
@@ -40,23 +35,26 @@ async def send_question_to_external_api(message: types.Message):
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(EXTERNAL_API_URL, json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-
-            # Обновляем или устанавливаем sessionId на основе ответа от API
-            session_storage[chat_id] = data.get("sessionId")
-
-            answer_text = data.get('text', 'Извините, не могу обработать ваш запрос.')
-            await message.answer(answer_text)
-
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Обновление sessionId на основе ответа от API, если он отличается
+                if 'sessionId' in data and data['sessionId'] != session_id:
+                    session_storage[chat_id] = {'sessionId': data['sessionId']}
+                
+                answer_text = data.get('text', 'Извините, не могу обработать ваш запрос.')
+                await message.answer(answer_text)
+            else:
+                logging.error(f"Unexpected response status: {response.status_code}")
+                await message.answer("Произошла ошибка при обработке вашего запроса API.")
         except httpx.HTTPStatusError as e:
+            # Если API возвращает ошибку, возможно, стоит обновить sessionId
+            session_storage[chat_id] = {'sessionId': None}
             logging.error(f"Ошибка ответа от API: {e.response.status_code} - {e.response.text}")
-            await message.answer('Произошла ошибка при обработке вашего запроса API.')
-
+            await message.answer('Произошла ошибка при обработке вашего запроса API. Попробуйте ещё раз.')
         except httpx.RequestError as e:
             logging.error(f"Ошибка запроса к API: {str(e)}")
-            await message.answer('Произошла ошибка при отправке запроса к API.')
-
+            await message.answer('Произозшла ошибка при отправке запроса к API.')
         except Exception as e:
             logging.error(f"Неизвестная ошибка: {str(e)}")
             await message.answer('Произошла неизвестная ошибка.')
