@@ -16,39 +16,38 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler()
 async def send_question_to_external_api(message: types.Message):
-    chat_id = message.chat.id
     question_text = message.text
     payload = {
         "question": question_text,
         "overrideConfig": {
-            "sessionId": str(chat_id)
+            "sessionId": str(message.chat.id)  # Используем chat_id как sessionId
         }
     }
     headers = {'Content-Type': 'application/json'}
     
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(
-                EXTERNAL_API_URL,
-                json=payload,
-                headers=headers
-            )
-            response.raise_for_status()  # Проверка на HTTP ошибки
-            data = response.json()
-            logging.info(f"API response: {data}")  # Логирование ответа от API
-            
-            answer_text = data.get('text', 'Извините, не получилось обработать ваш запрос.')
-            await message.answer(answer_text)
+            response = await client.post(EXTERNAL_API_URL, json=payload, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                # Проверка наличия ключа 'text' в ответе API
+                if 'text' in data:
+                    answer_text = data['text']
+                else:
+                    answer_text = "Извините, не получилось обработать ваш запрос."
+                await message.answer(answer_text)
+            else:
+                logging.error(f"Unexpected API response status: {response.status_code}, body: {response.text}")
+                await message.answer("Произошла ошибка при обработке вашего запроса API.")
         except httpx.HTTPStatusError as e:
-            logging.error(f"Ошибка ответа от API: {e.response.status_code} - {e.response.text}")
+            logging.error(f"HTTP error from API: {e.response.status_code} - {e.response.text}")
             await message.answer('Произошла ошибка при обработке вашего запроса API.')
         except httpx.RequestError as e:
-            logging.error(f"Ошибка запроса к API: {str(e)}")
+            logging.error(f"Request error to API: {str(e)}")
             await message.answer('Произошла ошибка при отправке запроса к API.')
         except Exception as e:
-            logging.error(f"Неизвестная ошибка: {str(e)}")
+            logging.error(f"Unknown error: {str(e)}")
             await message.answer('Произошла неизвестная ошибка.')
-
 
 async def on_startup(dp: Dispatcher):
     await bot.delete_webhook()
