@@ -40,7 +40,8 @@ async def send_question_to_external_api(message: types.Message):
     await bot.send_chat_action(chat_id, action=types.ChatActions.TYPING)
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(EXTERNAL_API_URL), json=payload, headers=headers) # Замените 'your_actual_chatflowid' на ваш реальный chatflowid
+            response = await client.post(EXTERNAL_API_URL, json=payload, headers=headers)
+
             response.raise_for_status()
             data = response.json()
 
