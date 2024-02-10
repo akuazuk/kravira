@@ -16,9 +16,11 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler()
 async def send_question_to_external_api(message: types.Message):
+    chat_id = message.chat.id  # Используем chat_id как sessionId
     question_text = message.text
     payload = {
-        "question": question_text  # Удалите лишние пробелы и скобки из вашего примера
+        "question": question_text,
+        "sessionId": str(chat_id),  # Преобразование chat_id в строку, если ваше API ожидает строковый идентификатор
     }
     headers = {'Content-Type': 'application/json'}
     
@@ -32,7 +34,6 @@ async def send_question_to_external_api(message: types.Message):
             response.raise_for_status()
             data = response.json()
             
-            # Извлечение текста ответа из ответа API
             answer_text = data.get('text', 'Извините, не могу обработать ваш запрос.')
             await message.answer(answer_text)
             
