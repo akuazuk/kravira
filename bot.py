@@ -5,7 +5,7 @@ import asyncio
 import uuid
 
 API_TOKEN = '6802893919:AAHu7eQN_IHadnX9vJU1wudHTTloaMSYHyY'
-EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/216fc9ec-2253-4769-a382-fd1171ba596c'
+EXTERNAL_API_URL = 'https://flowiseai-railway-production-aac7.up.railway.app/api/v1/prediction/{your-chatflowid}'
 
 # Словарь для хранения sessionId по chat_id
 session_storage = {}
